@@ -100,6 +100,9 @@
 /area/destroyer/unsclightbrigade/portsideumbilical
 	name = "UNSC Light Brigade Portside Umbilical"
 	icon_state = "red"
+/area/destroyer/unsclightbrigade/midshipgeneralstorage
+	name = "UNSC Light Brigade Midship General Storage"
+	icon_state = "chem"
 
 
 //Aft
