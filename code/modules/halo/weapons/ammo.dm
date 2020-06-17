@@ -24,11 +24,11 @@
 	projectile_type = /obj/item/projectile/bullet/a127_saphe
 
 /obj/item/projectile/bullet/a127_saphe
-	damage = 55		//deadly but inaccurate
-	accuracy = -1
+	damage = 55		//deadly but no AP
 
 /obj/item/projectile/bullet/a127
 	damage = 25
+	accuracy = 1
 
 /obj/item/weapon/storage/box/m127_saphe
 	name = "box of 12.7mm M225 magazines"
@@ -76,8 +76,7 @@
 //deadly but inaccurate
 /obj/item/projectile/bullet/a127_saphp
 	damage = 40
-	armor_penetration = 20
-	accuracy = 1
+	armor_penetration = 10
 
 /obj/item/weapon/storage/box/m127_saphp
 	name = "box of 12.7mm M228 magazines"
@@ -197,8 +196,9 @@
 	caliber = "9.5mm"
 	projectile_type = /obj/item/projectile/bullet/m95_sap
 
-/obj/item/projectile/bullet/m95_sap
-	damage = 35
+/obj/item/projectile/bullet/m95_sap //it fires 3 of these in functionally a straight line, so individual damage is lower
+	damage = 15
+	shield_damage = 5
 
 /obj/item/weapon/storage/box/m95_sap
 	name = "box of 9.5mm M634 magazines"
@@ -243,7 +243,7 @@
 	icon_state = "SRS99mag"
 	mag_type = MAGAZINE
 	ammo_type = /obj/item/ammo_casing/a145_ap
-	matter = list(DEFAULT_WALL_MATERIAL = 4000) //7.62mm casing = 50 metal each
+	matter = list(DEFAULT_WALL_MATERIAL = 10000)
 	caliber = "14.5mm"
 	max_ammo = 4
 	multiple_sprites = 1
@@ -259,20 +259,22 @@
 	projectile_type = /obj/item/projectile/bullet/a145_ap/tracerless
 
 /obj/item/projectile/bullet/a145_ap
-	damage = 60
-	step_delay = 0.1
+	damage = 55
+	armor_penetration = 60
+	step_delay = 0
 	penetrating = 5
-	armor_penetration = 65
 	tracer_type = /obj/effect/projectile/srs99
 	tracer_delay_time = 2 SECONDS
+	shield_damage = 210
 
 /obj/item/projectile/bullet/a145_ap/tracerless //Modified slightly to provide a downside for using the innie-heavy-sniper-rounds over normal rounds.
-	damage = 50
-	armor_penetration = 70
+	damage = 55
+	armor_penetration = 55
 	tracer_type = null
 	tracer_delay_time = null
 	pin_range = 3
 	pin_chance = 70
+	shield_damage = 150
 
 /obj/effect/projectile/srs99
 	icon = 'code/modules/halo/weapons/icons/Weapon Sprites.dmi'
@@ -313,11 +315,13 @@
 
 /obj/item/projectile/bullet/m5
 	damage = 20
+	shield_damage = 20
 
 /obj/item/projectile/bullet/m5/rubber //"rubber" bullets
 	name = "rubber bullet"
 	check_armour = "melee"
 	damage = 5
+	shield_damage = 0
 	agony = 20
 	embed = 0
 	sharp = 0
@@ -374,6 +378,7 @@
 	icon = 'code/modules/halo/weapons/icons/Weapon Sprites.dmi'
 	check_armour = "bomb"
 	step_delay = 1.2
+	shield_damage = 200 //just below elite minor shields, meaning subsequent explosion and guaranteed damage will collapse it.
 
 /obj/item/projectile/bullet/ssr/on_impact(var/atom/target)
 	explosion(target, 0, 1, 2, 4,guaranteed_damage = 50,guaranteed_damage_range = 2)
@@ -412,6 +417,7 @@
 	icon = 'code/modules/halo/weapons/icons/Weapon Sprites.dmi'
 	check_armour = "bomb"
 	step_delay = 1.2
+	shield_damage = 200
 
 /obj/item/projectile/bullet/m26/on_impact(var/atom/target)
 	explosion(target, 0, 1, 2, 4,guaranteed_damage = 50,guaranteed_damage_range = 2)
@@ -439,3 +445,103 @@
 	caliber = "shotgun"
 	max_ammo = 4
 	multiple_sprites = 1
+
+//40mm grenade
+/obj/item/ammo_casing/g40mm
+	name = "40mm grenade (Practice)"
+	desc = "A 40mm grenade shell. This one appears to be a Practice round."
+	icon = 'code/modules/halo/weapons/icons/Weapon Sprites.dmi'
+	icon_state = "40mm_shell"
+	spent_icon = "40mm_shell-spent"
+	caliber = "g40mm"
+	projectile_type = /obj/item/projectile/bullet/g40mm
+	slot_flags = SLOT_BELT
+	w_class = ITEM_SIZE_SMALL
+	matter = list(DEFAULT_WALL_MATERIAL = 500)
+
+/obj/item/ammo_casing/g40mm/he
+	name = "40mm grenade (HE)"
+	desc = "A 40mm grenade shell. This one appears to be a High Explosive round. Warning!: Arming range 2."
+	icon_state = "40mm_shell_HE"
+	projectile_type = /obj/item/projectile/bullet/g40mm/he
+
+/obj/item/ammo_casing/g40mm/frag
+	name = "40mm grenade (Fragmentation)"
+	desc = "A 40mm grenade shell. This one appears to be a Fragmentation round. Warning!: Arming range 2."
+	icon_state = "40mm_shell_frag"
+	projectile_type = /obj/item/projectile/bullet/g40mm/frag
+
+/obj/item/ammo_casing/g40mm/smoke
+	name = "40mm grenade (Smoke)"
+	desc = "A 40mm grenade shell. This one appears to be a Smoke round."
+	icon_state = "40mm_shell_smoke"
+	projectile_type = /obj/item/projectile/bullet/g40mm/smoke
+
+/obj/item/ammo_casing/g40mm/illumination
+	name = "40mm grenade (Illumination)"
+	desc = "A 40mm grenade shell. This one appears to be an Illumination round."
+	icon_state = "40mm_shell_illumination"
+	projectile_type = /obj/item/projectile/bullet/g40mm/illumination
+
+/obj/item/projectile/bullet/g40mm
+	name = "shell"
+	fire_sound = 'code/modules/halo/sounds/Grenade 1.ogg'
+	damage = 60 //it's less dangerous than a shotgun slug with its low AP, but 40mm grenades do obliterate unarmoured flesh
+	armor_penetration = 5
+	step_delay = 0.9
+	var/arming_range = 0
+
+/obj/item/projectile/bullet/g40mm/on_impact(var/atom/target)
+	if(arming_range && get_dist(starting,loc) <= arming_range)
+		return 0
+	return 1
+
+/obj/item/projectile/bullet/g40mm/he
+	damage = 20 //explosive is lower mass than a chunk of practice ammo
+	armor_penetration = 0 //likewise no room for AP in a regular old bomb
+	shield_damage = 100 //less than half minor shields but the explosion will put it pretty low
+	check_armour = "bomb"
+	arming_range = 2
+
+/obj/item/projectile/bullet/g40mm/he/on_impact(var/atom/target)
+	. = ..()
+	if (.)
+		explosion(target, -1, 0, 2, 3, 1) //adminlog for testing purposes
+		qdel(src)
+
+/obj/item/projectile/bullet/g40mm/frag
+	damage = 5 //this thing will be releasing a load of shrapnel anyway so damage should be appropriately low
+	armor_penetration = 0
+	arming_range = 2
+
+/obj/item/projectile/bullet/g40mm/frag/on_impact(var/atom/target)
+	. = ..()
+	if (.)
+		playsound(src.loc, 'sound/effects/explosion1.ogg', 30, 1, -3)
+		src.fragmentate(get_turf(target), 50, 7, list(/obj/item/projectile/bullet/pellet/fragment = 1))
+		qdel(src)
+
+/obj/item/projectile/bullet/g40mm/smoke
+	damage = 30
+	armor_penetration = 5
+	arming_range = 1
+
+/obj/item/projectile/bullet/g40mm/smoke/on_impact(var/atom/target)
+	var/datum/effect/effect/system/smoke_spread/bad/smoke
+	smoke = new  /datum/effect/effect/system/smoke_spread/bad()
+	smoke.attach(src)
+	playsound(src.loc, 'sound/effects/smoke.ogg', 50, 1, -3)
+	smoke.set_up(10, 0, usr.loc)
+	spawn(0)
+	smoke.start()
+	sleep(1)
+	smoke.start()
+	..()
+
+/obj/item/projectile/bullet/g40mm/illumination
+	damage = 30
+	armor_penetration = 5
+
+//this is empty for now
+/obj/item/projectile/bullet/g40mm/illumination/on_impact(var/atom/target)
+	. = ..()

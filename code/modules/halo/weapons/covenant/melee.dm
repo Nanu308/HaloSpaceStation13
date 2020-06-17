@@ -1,6 +1,6 @@
 #define ESWORD_LEAP_DIST 2
 #define ESWORD_LEAP_FAR_SPECIES list(/datum/species/sangheili,/datum/species/spartan, /datum/species/kig_yar_skirmisher)
-#define STAFF_LEAP_DIST 7
+#define STAFF_LEAP_DIST 4
 
 /obj/effect/esword_path
 	name = "displaced air"
@@ -13,9 +13,10 @@
 	icon = 'code/modules/halo/icons/Covenant Weapons.dmi'
 	icon_state = "T1EW Handle"
 	var/icon_state_deployed = "T1EW-deployed"
+	var/inhand_icon_state = "Energy sword_inhand Human" // " l" or " r" is added after this to make the variants
 	force = 1
 	throwforce = 1
-	active_force = 75
+	active_force = 55 //Hits like a sniper
 	active_throwforce = 12
 	armor_penetration = 35
 	var/hits_burn_mobs = 1
@@ -23,7 +24,6 @@
 	sharp = 0
 	var/failsafe = 0
 	activate_sound = 'code/modules/halo/sounds/Energysworddeploy.ogg'
-	parry_projectiles = 1
 
 	lunge_dist = ESWORD_LEAP_DIST
 
@@ -68,8 +68,8 @@
 	else
 		item_icons = list(slot_l_hand_str ='code/modules/halo/icons/Energy Sword_inhand Human.dmi',slot_r_hand_str = 'code/modules/halo/icons/Energy Sword_inhand Human.dmi')
 		item_state_slots = list(
-		slot_l_hand_str = "Energy sword_inhand Human l",
-		slot_r_hand_str = "Energy sword_inhand Human r" )
+		slot_l_hand_str = "[inhand_icon_state] l",
+		slot_r_hand_str = "[inhand_icon_state] r" )
 		hitsound = 'code/modules/halo/sounds/Energyswordhit.ogg'
 		parry_slice_objects = 1
 
@@ -99,7 +99,7 @@
 		if(icon_state == icon_state_deployed)
 			if(failsafe)
 				src.visible_message("<span class='warning'>[src] bursts into a superheated flash of plasma!</span>")
-				flick("blade burnout",src)
+				flick("[icon_state_deployed]-burnout",src)
 				spawn(5)
 					var/mob/living/M = src.loc
 					if(istype(M))
@@ -130,7 +130,6 @@
 	armor_penetration = 35
 	edge = 0
 	sharp = 0
-	parry_projectiles = 0
 
 	lunge_dist = 2
 
@@ -175,7 +174,6 @@
 	//active_force = 60
 	throwforce = 10
 	damtype = PAIN
-	parry_projectiles = 1
 	item_icons = list(
 		slot_l_hand_str = 'code/modules/halo/weapons/icons/Weapon_Inhands_left.dmi',
 		slot_r_hand_str = 'code/modules/halo/weapons/icons/Weapon_Inhands_right.dmi',
@@ -192,50 +190,6 @@
 		damtype = BURN
 		parry_slice_objects = 1
 
-//DONER
-
-//DOGLER
-
-//Dagger
-
-/obj/item/weapon/melee/energy/elite_sword/dagger/dogler
-
-	name = "Sya'tenee's Energy Dagger"
-	icon_state = "dogler_dag_handle"
-	icon_state_deployed = "dogler_dag_deploy"
-
-/obj/item/weapon/melee/energy/elite_sword/dagger/dogler/change_misc_variables(var/deactivate = 0)
-	if(deactivate)
-		item_icons = list(slot_l_hand_str = null,slot_r_hand_str = null)
-		item_state_slots = null
-		hitsound = "swing_hit"
-	else
-		item_icons = list(slot_l_hand_str ='code/modules/halo/icons/dogler_weapon_sprites.dmi',slot_r_hand_str = 'code/modules/halo/icons/dogler_weapon_sprites.dmi')
-		item_state_slots = list(
-		slot_l_hand_str = "dogler_dag_l_hand",
-		slot_r_hand_str = "dogler_dag_r_hand" )
-		hitsound = 'code/modules/halo/sounds/Energyswordhit.ogg'
-
-//Axe
-
-/obj/item/weapon/melee/energy/elite_sword/dogleraxe
-	name = "Sya'tenee's Energy Axe"
-	desc = "A huge, scary-looking energy axe, which looks too heavy to be wielded by humans..."
-	icon = 'code/modules/halo/icons/dogler_weapon_sprites.dmi'
-	force = 65
-	armor_penetration = 35
-	icon_state = "dogler_axe"
-	item_icons = list(slot_l_hand_str ='code/modules/halo/icons/dogler_weapon_sprites.dmi',slot_r_hand_str = 'code/modules/halo/icons/dogler_weapon_sprites.dmi')
-	item_state_slots = list(
-	slot_l_hand_str = "dogler_axe_l1",
-	slot_r_hand_str = "dogler_axe_r1")
-
-/obj/item/weapon/melee/energy/elite_sword/dogleraxe/activate(mob/living/user)
-	return
-
-/obj/item/weapon/melee/energy/elite_sword/dogleraxe/deactivate(mob/living/user)
-	return
-
 /obj/item/weapon/material/shard/shrapnel/blamite
 	name = "Blamite Blade"
 
@@ -250,6 +204,8 @@ Luckily, this isn't a downside due to the explosive properties of such a large a
 	item_icons = list(slot_l_hand_str ='code/modules/halo/weapons/icons/Weapon_Inhands_right.dmi',slot_r_hand_str = 'code/modules/halo/weapons/icons/Weapon_Inhands_right.dmi')
 	w_class = ITEM_SIZE_LARGE
 	slot_flags = SLOT_BACK | SLOT_BELT | SLOT_POCKET
+	edge = 1
+	sharp = 1
 	armor_penetration = 35
 	var/explode_delay = 10 SECONDS
 	var/explode_at = -1
@@ -269,13 +225,11 @@ Luckily, this isn't a downside due to the explosive properties of such a large a
 	if(active)
 		force = initial(force)
 		throwforce = initial(throwforce)
-		parry_projectiles = initial(parry_projectiles)
 		lunge_dist = initial(lunge_dist)
 		armor_penetration = initial(armor_penetration)
 	else
 		force = 5
 		throwforce = 5
-		parry_projectiles = 0
 		armor_penetration = 0
 		lunge_dist = 0
 

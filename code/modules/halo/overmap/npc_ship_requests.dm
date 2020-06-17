@@ -176,7 +176,7 @@
 		origin_ship.our_fleet.assign_leader(origin_ship)
 	if(!origin_ship || !istype(origin_ship) || !origin_ship.our_fleet)
 		return
-	origin_ship.our_fleet.add_tofleet(ship_source)
+	origin_ship.our_fleet.add_ship(ship_source)
 
 /datum/npc_ship_request/give_control
 	request_name = "Give Fleet Control"
@@ -284,7 +284,7 @@
 		if(repairs_until_loc_transmit > 0)
 			repairs_until_loc_transmit--
 		else
-			GLOB.global_headset.autosay("Previously unlogged object located at [ship_source.x],[ship_source.y]", "System Scan", "EBAND", transmit_lang)
+			GLOB.global_announcer.autosay("Previously unlogged object located at [ship_source.x],[ship_source.y]", "System Scan", "EBAND", transmit_lang)
 
 /datum/npc_ship_request/shipyard_repair/insecure/cov
 	request_auth_levels = list(AUTHORITY_LEVEL_COV)

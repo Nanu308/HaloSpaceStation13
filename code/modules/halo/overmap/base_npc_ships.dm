@@ -39,7 +39,7 @@
 	var/list/messages_on_hit = ON_PROJECTILE_HIT_MESSAGES
 	var/list/messages_on_death = ON_DEATH_MESSAGES
 	var/radio_language = "Galactic Common"
-	var/radio_channel = "System"
+	var/radio_channel = RADIO_HUMAN
 
 	var/hull = 1000 //Essentially used to tell the ship when to "stop" trying to move towards it's area.
 
@@ -124,7 +124,7 @@
 	//check if we're still on cooldown from last radio message
 	if(world.time >= last_radio_time + radio_cooldown || ignore_cooldown)
 		last_radio_time = world.time
-		GLOB.global_headset.autosay(message, src.name, radio_channel, radio_language)
+		GLOB.global_announcer.autosay(message, src.name, radio_channel, radio_language)
 	else
 		//otherwise queue it up
 		//note: if there is lots of radio spam some messages will be lost so only send the latest message
@@ -157,13 +157,23 @@
 	walk(src,0)
 	if(isnull(loc))
 		return
-	if(our_fleet && our_fleet.leader_ship != src && our_fleet.leader_ship.loc != null)
-		target_loc = pick(trange(FLEET_STICKBY_RANGE,our_fleet.leader_ship.loc))
-		return
+
+	if(our_fleet)
+
+		//do we have a valid fleet leader to follow?
+		if(our_fleet.leader_ship && our_fleet.leader_ship != src && our_fleet.leader_ship.loc != null)
+			target_loc = pick(trange(FLEET_STICKBY_RANGE,our_fleet.leader_ship.loc))
+			return
+
+		//does our fleet have an objective?
+		if(our_fleet.fleet_target)
+			target_loc  = pick(trange(FLEET_STICKBY_RANGE,our_fleet.fleet_target))
+			return
+
 	var/list/sectors_onmap = list()
 	for(var/type in typesof(/obj/effect/overmap/sector) - /obj/effect/overmap/sector)
 		var/obj/effect/overmap/om_obj = locate(type)
-		if(om_obj && !isnull(om_obj.loc) && om_obj.base && my_faction && !(om_obj.get_faction() in my_faction.enemy_factions)) //Only even try going if it's a "base" object
+		if(om_obj && !isnull(om_obj.loc) && om_obj.base && my_faction && !(om_obj.get_faction() in my_faction.enemy_faction_names)) //Only even try going if it's a "base" object
 			sectors_onmap += om_obj
 	if(sectors_onmap.len == 0)
 		target_loc = pick(GLOB.overmap_tiles_uncontrolled)
@@ -241,6 +251,7 @@
 			broadcast_hit()
 
 	if(add_proj && hull <=0) // So we don't delete the ship from damage when it's loaded in.
+		new /obj/effect/explosion(src.loc)
 		lose_to_space()
 
 /obj/effect/overmap/ship/npc_ship/proc/pick_ship_datum()

@@ -122,7 +122,7 @@
 	if(attachments.len > 0)
 		var/load_success = 0
 		for(var/obj/item/weapon_attachment/secondary_weapon/attachment in get_attachments())
-			if(!istype(A,attachment.alt_fire_ammo_typepath))
+			if(!istype(A,attachment.ammotype))
 				continue
 			var/load_succeed = attachment.load_attachment(A,user)
 			if(load_succeed == 1)
@@ -184,6 +184,16 @@
 
 //attempts to unload src. If allow_dump is set to 0, the speedloader unloading method will be disabled
 /obj/item/weapon/gun/projectile/proc/unload_ammo(mob/user, var/allow_dump=1)
+	//first checks if we're unloading a secondary weapon
+	var/list/attachments = get_attachments()
+	if(attachments.len > 0)
+		var/have_unloaded = 0
+		for(var/obj/item/weapon_attachment/secondary_weapon/attachment in get_attachments())
+			if(attachment.alt_fire_active == 1)
+				attachment.unload_attachment(user)
+				have_unloaded = 1
+		if(have_unloaded)
+			return //having unloaded your secondary weapon you don't want to unload your primary weapon too
 	if(is_jammed)
 		user.visible_message("\The [user] begins to unjam [src].", "You clear the jam and unload [src]")
 		if(!do_after(user, 4, src))
@@ -227,6 +237,10 @@
 	if(firemodes.len > 1)
 		..()
 	else
+		if(stored_targ)
+			to_chat(user,"<span class = 'notice'>You stop your sustained burst from [src]</span>")
+			stored_targ = null
+			return
 		unload_ammo(user)
 
 /obj/item/weapon/gun/projectile/attack_hand(mob/user as mob)

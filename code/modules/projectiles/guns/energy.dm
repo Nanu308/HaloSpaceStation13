@@ -18,6 +18,7 @@
 	var/use_external_power = 0 //if set, the weapon will look for an external power source to draw from, otherwise it recharges magically
 	var/recharge_time = 4
 	var/charge_tick = 0
+	var/alt_charge_method = 0 //If set, we use an alternate charging method and disallow wallcharging (cov guns)
 
 /obj/item/weapon/gun/energy/switch_firemodes()
 	. = ..()
@@ -43,6 +44,13 @@
 	return ..()
 
 /obj/item/weapon/gun/energy/process()
+	. = PROCESS_KILL
+	. = ..()
+	if(process_self_recharge())
+		return 0
+	return .
+
+/obj/item/weapon/gun/energy/proc/process_self_recharge()
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the cyborg
 		charge_tick++
 		if(charge_tick < recharge_time) return 0
@@ -58,12 +66,14 @@
 
 		power_supply.give(charge_cost) //... to recharge the shot
 		update_icon()
-	return 1
+		return 1
 
 /obj/item/weapon/gun/energy/consume_next_projectile()
 	if(!power_supply) return null
 	if(!ispath(projectile_type)) return null
 	if(!power_supply.checked_use(charge_cost)) return null
+	if(self_recharge)
+		GLOB.processing_objects.Add(src)
 	return new projectile_type(src)
 
 /obj/item/weapon/gun/energy/proc/get_external_power_supply()

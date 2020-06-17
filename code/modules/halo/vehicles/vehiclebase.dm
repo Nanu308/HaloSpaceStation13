@@ -22,11 +22,10 @@
 	var/max_speed = 1//What's the lowest number we can go to in terms of delay?
 	var/acceleration = 1 //By how much does our speed change per input?
 	var/braking_mode = 0 //1 = brakes active, -1 = purposefully reducing drag to slide.
+	var/can_space_move = 0
 
 	//Advanced Damage Handling
 	var/datum/component_profile/comp_prof = /datum/component_profile
-
-	var/vehicle_move_delay = 1
 
 	var/list/sprite_offsets = list("1" = list(0,0),"2" = list(0,0),"4" = list(0,0),"8" = list(0,0)) //Handled Directionally. Numbers correspond to directions
 
@@ -40,6 +39,7 @@
 	var/cargo_capacity = 0
 	var/capacity_flag = ITEM_SIZE_SMALL
 	var/list/cargo_contents = list()
+	var/list/ammo_containers = list() //Ammunition containers in the form of ammo magazines.
 
 	//Vehicle ferrying//
 	var/vehicle_size = ITEM_SIZE_VEHICLE//The size of the vehicle, used by vehicle cargo ferrying to determine allowed amount and allowed size.
@@ -48,8 +48,12 @@
 
 	var/vehicle_view_modifier = 1 //The view-size modifier to apply to the occupants of the vehicle.
 	var/move_sound = null
+	var/collision_sound = 'sound/effects/clang.ogg'
 
 	var/datum/mobile_spawn/spawn_datum //Setting this makes this a mobile spawn point.
+
+	var/datum/gas_mixture/internal_air = null//If this is new()'d, the vehicle provides air to the occupants.
+	//I would make it require refilling, but that's likely to just be boring tedium for players.
 
 	light_power = 4
 	light_range = 6
@@ -86,6 +90,7 @@
 		active = 0
 	else
 		active = 1
+		communicate(/decl/communication_channel/dsay, src, "A [spawn_datum.spawn_faction] mobile respawn point within [src] has just been activated at ([x],[y],[z]), [get_area(src)]", /decl/dsay_communication/direct)
 
 /obj/vehicles/verb/toggle_headlights()
 	set name = "Toggle Headlights"
@@ -118,6 +123,27 @@
 	if(spawn_datum)
 		spawn_datum = new spawn_datum
 		verbs += /obj/vehicles/proc/toggle_mobile_spawn_deploy
+	if(internal_air)
+		internal_air.volume = 2500
+		internal_air.temperature = T20C
+
+/obj/vehicles/lost_in_space()
+	if(!can_space_move)
+		return TRUE
+	return FALSE
+
+/obj/vehicles/return_air_for_internal_lifeform(var/mob/living/carbon/human/form)
+	if(!internal_air || !istype(form))
+		return loc.return_air()
+	internal_air.gas[form.species.breath_type] = 0
+	for(var/gas in internal_air.gas)
+		internal_air.gas[gas] = 100/internal_air.gas.len
+	return internal_air
+
+/obj/vehicles/return_air()
+	if(internal_air)
+		return internal_air
+	return loc.return_air()
 
 /obj/vehicles/attack_generic(var/mob/living/simple_animal/attacker,var/damage,var/text)
 	visible_message("<span class = 'danger'>[attacker] [text] [src]</span>")
@@ -131,6 +157,18 @@
 			return 1
 		attacker.UnarmedAttack(mob_to_hit)
 	comp_prof.take_component_damage(damage,"brute")
+
+/obj/vehicles/proc/display_ammo_status(var/mob/user)
+	for(var/m in ammo_containers)
+		var/obj/item/ammo_magazine/mag = m
+		var/msg = "is full!"
+		if(mag.stored_ammo.len >= mag.initial_ammo * 0.75)
+			msg = "is about 3 quarters full."
+		else if(mag.stored_ammo.len > mag.initial_ammo * 0.5)
+			msg = "is about half full."
+		else if(mag.stored_ammo.len > mag.initial_ammo * 0.25)
+			msg = "is about a quarter full."
+		to_chat(user,"<span class = 'notice'>[src]'s [mag] [msg]</span>")
 
 /obj/vehicles/examine(var/mob/user)
 	. = ..()
@@ -151,6 +189,8 @@
 
 	show_occupants_contained(user)
 
+	display_ammo_status(user)
+
 /obj/vehicles/proc/pick_valid_exit_loc()
 	var/list/valid_exit_locs = list()
 	for(var/turf/t in locs)
@@ -164,6 +204,7 @@
 
 /obj/vehicles/Destroy()
 	GLOB.processing_objects -= src
+	kick_occupants()
 	. = ..()
 
 /obj/vehicles/proc/on_death()
@@ -292,7 +333,17 @@
 	if(toggler)
 		to_chat(toggler,"<span class = 'notice'>[message]</span>")
 
-/obj/vehicles/Move()
+/obj/vehicles/Move(var/newloc,var/newdir)
+	if(abs(speed[1]) > abs(speed[2]))
+		if(speed[1] > 0)
+			newdir = EAST
+		else
+			newdir = WEST
+	else
+		if(speed[2] > 0)
+			newdir = NORTH
+		else
+			newdir = SOUTH
 	if(anchored)
 		anchored = 0
 		. = ..()
@@ -307,13 +358,21 @@
 	. = ..()
 
 /obj/vehicles/proc/collide_with_obstacle(var/atom/obstacle)
-	speed[1] = 0
-	speed[2] = 0
+	if(istype(obstacle,/mob/living))
+		var/mob/living/hit_mob = obstacle
+		playsound(loc,collision_sound,100,0,4)
+		hit_mob.Weaken(2) //No damage for now, let's just knock them over.
+	else
+		moving_x = 0
+		moving_y = 0
+		last_moved_axis = 0
+		speed[1] = 0
+		speed[2] = 0
 	visible_message("<span class = 'notice'>[src] collides wth [obstacle]</span>")
 
 /obj/vehicles/Bump(var/atom/obstacle)
-	. = ..()
-	collide_with_obstacle(obstacle)
+	..()
+	. = collide_with_obstacle(obstacle)
 
 /obj/vehicles/proc/movement_loop(var/speed_index_target = 1)
 	set background = 1
@@ -323,7 +382,7 @@
 		if(2)
 			moving_y = 1
 	while (speed[speed_index_target] != 0)
-		sleep(max(min_speed - abs(speed[speed_index_target]),max_speed))
+		sleep(max(min_speed - (abs(speed[speed_index_target]) + abs(speed[speed_index_target==1?2:1])/2),max_speed)) //Our delay is the average of both.
 		if(speed[speed_index_target] > 0)
 			switch(speed_index_target)
 				if(1)
@@ -376,16 +435,18 @@
 		for(var/mob/living/m in get_occupants_in_position(position))
 			m.apply_damage((250/severity)*(exposed_positions[position]/100),BRUTE,,m.run_armor_check(null,"bomb"))
 
-//TODO: REIMPLEMENT SPEED BASED MOVEMENT
 /obj/vehicles/relaymove(var/mob/user, var/direction)
 	if(world.time < next_move_input_at)
+		return 0
+	if(isspace(loc) && !can_space_move)
+		to_chat(user,"<span class = 'notice'>[src] cannot move in space!</span>")
 		return
 	if(movement_destroyed)
 		to_chat(user,"<span class = 'notice'>[src] is in no state to move!</span>")
-		return
+		return 0
 	if(!active)
 		to_chat(user,"<span class = 'notice'>[src] needs to be active to move!</span>")
-		return
+		return 0
 	var/list/driver_list = get_occupants_in_position("driver")
 	var/is_driver = FALSE
 	for(var/mob/driver in driver_list)
@@ -393,7 +454,12 @@
 			is_driver = TRUE
 			break
 	if(!is_driver)
-		return
+		return -1 //doesn't return 0 so we can differentiate this from the other problems for simple mobs.
+	if(!(direction in list(NORTH,SOUTH,EAST,WEST)))
+		var/dirturn = 45
+		if(prob(50))
+			dirturn = -45
+		direction = turn(direction,dirturn)
 	switch(direction)
 		if(NORTH)
 			last_moved_axis = 2
@@ -421,6 +487,7 @@
 		spawn()
 			movement_loop(2)
 	next_move_input_at = world.time + acceleration
+	return 1
 
 /obj/vehicles/verb/verb_inspect_components()
 	set name = "Inspect Components"

@@ -5,7 +5,7 @@
 	If the fire mode value for a setting is null, it will be replaced with the initial value of that gun's variable when the firemode is created.
 	Obviously not compatible with variables that take a null value. If a setting is not present, then the corresponding var will not be modified.
 */
-#define BASE_MOVEDELAY_MOD_APPLYFOR_TIME 0.75 SECONDS
+#define BASE_MOVEDELAY_MOD_APPLYFOR_TIME 1 SECOND
 
 /datum/firemode
 	var/name = "default"
@@ -67,7 +67,7 @@
 	var/accuracy = 0   //accuracy is measured in tiles. +1 accuracy means that everything is effectively one tile closer for the purpose of miss chance, -1 means the opposite. launchers are not supported, at the moment.
 	var/scoped_accuracy = null
 	var/list/burst_accuracy = list(0) //allows for different accuracies for each shot in a burst. Applied on top of accuracy
-	var/list/dispersion = list(0)
+	var/list/dispersion = list(0) // 1 = 9 degrees of dispersion in positive, 9 in negative
 	var/one_hand_penalty // -1 is used for "unable to fire unless twohandable".
 	var/wielded_item_state
 	var/can_rename = 1 //Can this weapon be renamed by the user?
@@ -276,7 +276,8 @@
 		return
 
 	if(is_charged_weapon==1)
-		playsound(src.loc, charge_sound, 100, 1)
+		if(charge_sound)
+			playsound(src.loc, charge_sound, 100, 1)
 		user.visible_message("<span class = 'notice'>[user] starts charging the [src]!</span>")
 
 		is_charging = 1
@@ -300,26 +301,37 @@
 	if(target.z != user.z) return 0
 	return 1
 
+/obj/item/weapon/gun/proc/pershot_check(var/mob/user) //Placeholder for any checks that must be performed per-shot. Used for vehicles.
+	if(overheat_capacity == -1 || overheat_capacity > 0)
+		return 1
+	return 0
+
 /obj/item/weapon/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
 	if(!user || !target) return
 	if(target.elevation != last_elevation && (istype(target,/obj/vehicles) || istype(target,/mob/living)))
 		last_elevation = target.elevation
-		visible_message("<span class = 'warning'>[user.name] changes their firing elevation to target [target.name]</span>")
+		visible_message("<span class = 'danger'>[user.name] changes their firing elevation to target [target.name]</span>")
+	var/list/rounds_nosuppress = list()
 	if(istype(user.loc,/obj/vehicles))
 		var/obj/vehicles/V = user.loc
-		var/user_position = V.occupants[user]
-		if(isnull(user_position)) return
-		if(user_position == "driver")
-			to_chat(user,"<span class = 'warning'>You can't fire from the driver's position!</span>")
-			return
-		if(!(user_position in V.exposed_positions))
-			to_chat(user,"<span class = 'warning'>You can't fire [src.name] from this position in [V.name].</span>")
-			return
+		rounds_nosuppress += V.occupants
+		if(!istype(src,/obj/item/weapon/gun/vehicle_turret))
+			var/user_position = V.occupants[user]
+			if(isnull(user_position)) return
+			if(user_position == "driver")
+				to_chat(user,"<span class = 'warning'>You can't fire from the driver's position!</span>")
+				return
+			if(!(user_position in V.exposed_positions))
+				to_chat(user,"<span class = 'warning'>You can't fire [src.name] from this position in [V.name].</span>")
+				return
 		if(target.z != V.z) return
 	else
 		if(!check_z_compatible(target,user)) return
 
 	add_fingerprint(user)
+	if(check_overheat())
+		return
+
 	var/list/attachments = get_attachments()
 	if(attachments.len > 0)
 		var/have_fired = 0
@@ -339,8 +351,9 @@
 		return
 
 	if(world.time < next_fire_time)
-		if (world.time % 3) //to prevent spam
+		/*if (world.time % 3) //to prevent spam
 			to_chat(user, "<span class='warning'>[src] is not ready to fire again!</span>")
+			*/
 		return
 
 	var/held_twohanded = (user.can_wield_item(src) && src.is_held_twohanded(user))
@@ -368,7 +381,16 @@
 		stored_targ = target
 		use_targ = stored_targ
 	. = 1
+	/*
+	user.visible_message(
+	"<span class='danger'>\The [user] fires \the [src][pointblank ? " point blank at \the [target]":""]!</span>",
+	"<span class='warning'>You fire \the [src]!</span>",
+	"You hear a [fire_sound_text]!"
+	)
+	*/
 	for(var/i in 1 to burst)
+		if(!pershot_check(user))
+			break
 		if(stored_targ)
 			if(stored_targ == user)
 				stored_targ = null
@@ -386,9 +408,11 @@
 			handle_click_empty(user)
 			. = 0
 			break
+
 		if(istype(projectile,/obj/item/projectile))
 			var/obj/item/projectile/proj_obj = projectile
 			proj_obj.target_elevation = last_elevation
+			proj_obj.permutated += rounds_nosuppress //Stops people in a vehicle from being suppressed by their own vehicle's shots.
 
 		if(user.loc != targloc) //This should stop people being able to just click on someone for free autotracking.
 			var/mob/living/targ_m = target
@@ -409,9 +433,18 @@
 		else
 			target_zone = "chest"
 
-		if(process_projectile(projectile, user, use_targ, target_zone, clickparams))
+		var/result = process_projectile(projectile, user, use_targ, target_zone, clickparams)
+
+		if(overheat_capacity > 0)
+			add_heat(heat_per_shot)
+
+		if(result)
 			handle_post_fire(user, use_targ, pointblank, reflex)
 			update_icon()
+
+		if(overheat_capacity > 0)
+			if(heat_current >= overheat_capacity)
+				break
 
 		if(i < burst)
 			sleep(burst_delay)
@@ -450,6 +483,7 @@
 
 //called after successfully firing
 /obj/item/weapon/gun/proc/handle_post_fire(mob/user, atom/target, var/pointblank=0, var/reflex=0)
+	/*
 	if(!silenced)
 		if(reflex)
 			user.visible_message(
@@ -459,10 +493,11 @@
 			)
 		else
 			user.visible_message(
-				"<span class='danger'>\The [user] fires \the [src][pointblank ? " point blank at \the [target]":""]!</span>",
-				"<span class='warning'>You fire \the [src]!</span>",
+				"<span class='notice'>\The [user] [burst > 1 ? "continues firing":"fires"] \the [src][pointblank ? " point blank at \the [target]":""]!</span>",
+				,
 				"You hear a [fire_sound_text]!"
 				)
+				*/
 
 	if(one_hand_penalty)
 		if(!src.is_held_twohanded(user))
@@ -554,7 +589,7 @@
 
 	//Accuracy modifiers
 	P.accuracy = accuracy + acc_mod
-	P.dispersion = disp_mod
+	P.dispersion = max(0,disp_mod)
 
 	//accuracy bonus from aiming
 	if (aim_targets && (target in aim_targets))
@@ -594,7 +629,7 @@
 	return launched
 
 /obj/item/weapon/gun/proc/play_fire_sound(var/mob/user, var/obj/item/projectile/P)
-	var/shot_sound = (istype(P) && fire_sound)? fire_sound : P.fire_sound //Tweaked to favour gun firesound over projectile firesound.;
+	var/shot_sound = fire_sound ? fire_sound : istype(P) ? P.fire_sound : null //Tweaked to favour gun firesound over projectile firesound.;
 	if(silenced)
 		playsound(user, shot_sound, 10, 0)
 	else
@@ -653,8 +688,14 @@
 			cumulative_accmod += attrib_mods[2]
 			cumulative_slowdownmod += attrib_mods[3]
 
-	dispersion += cumulative_dispmod
-	accuracy += cumulative_accmod
+	if(cumulative_dispmod > 0) //Allowing the changing of dispersion through attachments can be abused for laser accurate guns.
+	//Attachments granting dispersion decreases can be used to counter the dispersion increase of other attachments.
+		for(var/entry in dispersion)
+			entry += cumulative_dispmod
+	if(cumulative_accmod != 0)
+		for(var/entry in burst_accuracy)
+			entry += cumulative_accmod
+		accuracy += cumulative_accmod
 	slowdown_general += cumulative_slowdownmod
 
 /obj/item/weapon/gun/proc/toggle_scope(mob/user, var/zoom_amount=2.0)
@@ -721,6 +762,12 @@
 		for(var/name in attachments_names)
 			to_chat(user,"\n[name]")
 
+	if(overheat_capacity > 0)
+		if(heat_current < overheat_capacity)
+			to_chat(user,"[src] has [heat_current]/[overheat_capacity] shots left until overheat.")
+		else
+			to_chat(user,"[src] is overheating and needs to ventilate heat.")
+
 /obj/item/weapon/gun/proc/switch_firemodes()
 	if(firemodes.len <= 1)
 		return null
@@ -734,6 +781,10 @@
 	return new_mode
 
 /obj/item/weapon/gun/attack_self(mob/user)
+	if(stored_targ)
+		to_chat(user,"<span class = 'notice'>You stop your sustained burst from [src]</span>")
+		stored_targ = user
+		return
 	var/datum/firemode/new_mode = switch_firemodes(user)
 	if(new_mode)
 		to_chat(user, "<span class='notice'>\The [src] is now set to [new_mode.name].</span>")

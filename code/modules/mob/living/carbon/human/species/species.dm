@@ -192,6 +192,8 @@
 	var/breathing_sound = 'sound/voice/monkey.ogg'
 
 	var/list/item_icon_offsets = list(list(0,0),list(0,0),null,list(0,0),null,null,null,list(0,0),null) //A list (x,y) of offsets to apply to inhand images, each list corrresponds to a dir.
+	var/list/inhand_icon_offsets = list(list(0,0),list(0,0),null,list(0,0),null,null,null,list(0,0),null) //Align a test item with the right hand when facing south for n/s.
+	var/inter_hand_dist = 12 //Measured from bottom right-middle of left hand to bottom left-middle of right hand
 	//NOTE FOR ABOVE: Posive X moves right, positive Y moves up.
 	var/melee_force_multiplier = 1
 	var/equipment_slowdown_multiplier = 1	//for strong or weak species
@@ -263,6 +265,9 @@
 	H.organs_by_name = list()
 	H.internal_organs_by_name = list()
 
+	if(s)
+		H.internal_organs_by_name["stack"] = s
+
 	for(var/limb_type in has_limbs)
 		var/list/organ_data = has_limbs[limb_type]
 		var/limb_path = organ_data["path"]
@@ -284,11 +289,6 @@
 
 	for(var/obj/item/organ/O in (H.organs|H.internal_organs))
 		O.owner = H
-
-	if(s)
-		H.internal_organs_by_name["stack"] = s
-		H.internal_organs += s
-		s.owner = H
 
 	H.sync_organ_dna()
 

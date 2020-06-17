@@ -206,6 +206,10 @@ var/list/airlock_overlays = list()
 	door_color = COLOR_WHITE
 	stripe_color = COLOR_VIOLET
 
+/obj/machinery/door/airlock/glass/chemistry
+	door_color = COLOR_WHITE
+	stripe_color = COLOR_PALE_ORANGE
+
 /obj/machinery/door/airlock/glass/sol
 	door_color = COLOR_BLUE_GRAY
 	stripe_color = COLOR_AMBER
@@ -240,7 +244,7 @@ var/list/airlock_overlays = list()
 	locked = 1
 
 /obj/machinery/door/airlock/external/bolted/cycling
-	frequency = 1379
+	frequency = AIRLOCK_FREQ
 
 /obj/machinery/door/airlock/external/bolted_open
 	icon_state = "open"
@@ -258,7 +262,7 @@ var/list/airlock_overlays = list()
 	locked = 1
 
 /obj/machinery/door/airlock/external/glass/bolted/cycling
-	frequency = 1379
+	frequency = AIRLOCK_FREQ
 
 /obj/machinery/door/airlock/external/glass/bolted_open
 	icon_state = "open"
@@ -900,17 +904,33 @@ About the new airlock wires panel:
 	if(..())
 		return 1
 
+	var/mob/living/silicon/ai/ai = usr
+	var/do_ai_check = 0
+	if(istype(ai))
+		do_ai_check = 1
 	var/activate = text2num(href_list["activate"])
 	switch (href_list["command"])
 		if("idscan")
+			if(do_ai_check && ai.check_access_level(src) > 4)
+				to_chat(ai,"<span class = 'notice'>You need access level 4 to do that.</span>")
+				return
 			set_idscan(activate, 1)
 		if("main_power")
+			if(do_ai_check && ai.check_access_level(src) > 3)
+				to_chat(ai,"<span class = 'notice'>You need access level 3 to do that.</span>")
+				return
 			if(!main_power_lost_until)
 				src.loseMainPower()
 		if("backup_power")
+			if(do_ai_check && ai.check_access_level(src) > 4)
+				to_chat(ai,"<span class = 'notice'>You need access level 4 to do that.</span>")
+				return
 			if(!backup_power_lost_until)
 				src.loseBackupPower()
 		if("bolts")
+			if(do_ai_check && ai.check_access_level(src) > 4)
+				to_chat(ai,"<span class = 'notice'>You need access level 4 to do that.</span>")
+				return
 			if(src.isWireCut(AIRLOCK_WIRE_DOOR_BOLTS))
 				to_chat(usr, "The door bolt control wire is cut - Door bolts permanently dropped.")
 			else if(activate && src.lock())
@@ -918,10 +938,19 @@ About the new airlock wires panel:
 			else if(!activate && src.unlock())
 				to_chat(usr, "The door bolts have been raised.")
 		if("electrify_temporary")
+			if(do_ai_check && ai.check_access_level(src) > 3)
+				to_chat(ai,"<span class = 'notice'>You need access level 3 to do that.</span>")
+				return
 			electrify(30 * activate, 1)
 		if("electrify_permanently")
+			if(do_ai_check && ai.check_access_level(src) > 4)
+				to_chat(ai,"<span class = 'notice'>You need access level 4 to do that.</span>")
+				return
 			electrify(-1 * activate, 1)
 		if("open")
+			if(do_ai_check && ai.check_access_level(src) > 3)
+				to_chat(ai,"<span class = 'notice'>You need access level 3 to do that.</span>")
+				return
 			if(src.welded)
 				to_chat(usr, text("The airlock has been welded shut!"))
 			else if(src.locked)
@@ -931,8 +960,14 @@ About the new airlock wires panel:
 			else if(!activate && !density)
 				close()
 		if("safeties")
+			if(do_ai_check && ai.check_access_level(src) > 3)
+				to_chat(ai,"<span class = 'notice'>You need access level 3 to do that.</span>")
+				return
 			set_safeties(!activate, 1)
 		if("timing")
+			if(do_ai_check && ai.check_access_level(src) > 3)
+				to_chat(ai,"<span class = 'notice'>You need access level 3 to do that.</span>")
+				return
 			// Door speed control
 			if(src.isWireCut(AIRLOCK_WIRE_SPEED))
 				to_chat(usr, text("The timing wire is cut - Cannot alter timing."))
@@ -942,6 +977,9 @@ About the new airlock wires panel:
 				normalspeed = 1
 		if("lights")
 			// Lights
+			if(do_ai_check && ai.check_access_level(src) > 3)
+				to_chat(ai,"<span class = 'notice'>You need access level 3 to do that.</span>")
+				return
 			if(src.isWireCut(AIRLOCK_WIRE_LIGHT))
 				to_chat(usr, "The lights wire is cut - The door lights are permanently disabled.")
 			else if (!activate && src.lights)
@@ -1390,9 +1428,13 @@ About the new airlock wires panel:
 		electronics.one_access = 1
 
 /obj/machinery/door/airlock/emp_act(var/severity)
+
 	if(prob(20/severity))
 		spawn(0)
 			open()
+	if(prob(10/severity))
+		spawn(0)
+			lock()
 	if(prob(40/severity))
 		var/duration = SecondsToTicks(30 / severity)
 		if(electrified_until > -1 && (duration + world.time) > electrified_until)

@@ -19,6 +19,7 @@
 	active = 0
 
 	can_traverse_zs = 1
+	can_space_move = 1
 
 	var/faction = null //The faction this vehicle belongs to. Setting this will restrict landing to faction-owned and Civilian points only
 
@@ -37,7 +38,7 @@
 			playsound(src,takeoff_sound,100,0)
 	var/takeoff_overlay = image(icon,takeoff_overlay_icon_state)
 	overlays += takeoff_overlay
-	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
+	pass_flags = PASSTABLE | PASSGRILLE
 	block_enter_exit = 1
 
 /obj/vehicles/air/proc/land_vehicle(var/message_n_sound_override = 0)
@@ -112,6 +113,10 @@
 	if(!active)
 		to_chat(usr,"<span class = 'notice'>You need to be in the air to do that!.</span>")
 		return
+	if(world.time < ticker.mode.ship_lockdown_until)
+		to_chat(usr,"<span class = 'notice'>[src] is still finalising long-range deployment preparations!</span>")
+		return
+
 	to_chat(usr,"<span class = 'notice'>You start prepping [src] for long-range flight..</span>")
 	visible_message("<span class = 'notice'>[src] starts prepping for long-range flight..</span>")
 	if(!do_after(usr,WAYPOINT_FLIGHT_DELAY,src))

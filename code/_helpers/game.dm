@@ -212,11 +212,15 @@
 	return hear
 
 
-/proc/get_mobs_in_radio_ranges(var/list/obj/item/device/radio/radios)
+/proc/get_mobs_in_radio_ranges(var/list/obj/item/device/radio/radios, var/skip_ghosts = 0)
 
 	set background = 1
 
 	. = list()
+
+	if(!radios.len)
+		return .
+
 	// Returns a list of mobs who can hear any of the radios given in @radios
 	var/list/speaker_coverage = list()
 	for(var/obj/item/device/radio/R in radios)
@@ -234,7 +238,7 @@
 			var/turf/speaker = get_turf(R)
 			if(speaker)
 				for(var/turf/T in hear(R.canhear_range,speaker))
-					speaker_coverage[T] = T
+					speaker_coverage[T] = R
 
 
 	// Try to find all the players who can hear the message
@@ -243,17 +247,23 @@
 		if(M)
 			var/turf/ear = get_turf(M)
 			if(ear)
+				if(speaker_coverage[ear])
+					.[M] = speaker_coverage[ear]	//remember the radio we are listening to
+
 				// Ghostship is magic: Ghosts can hear radio chatter from anywhere
-				if(speaker_coverage[ear] || (isghost(M) && M.is_preference_enabled(/datum/client_preference/ghost_radio)))
-					. |= M		// Since we're already looping through mobs, why bother using |= ? This only slows things down.
+				if(!skip_ghosts && isghost(M) && M.is_preference_enabled(/datum/client_preference/ghost_radio))
+					.[M] = radios[1]	//slightly hacky but this should be fine
 	return .
 
-/proc/get_mobs_and_objs_in_view_fast(var/turf/T, var/range, var/list/mobs, var/list/objs, var/checkghosts = null)
+/proc/get_mobs_and_objs_in_view_fast(var/turf/T, var/range, var/list/mobs, var/list/objs, var/checkghosts = null, var/do_debug = 0)
 
-	var/list/hear = dview(range,T,INVISIBILITY_MAXIMUM)
+	if(do_debug)	to_debug_listeners("get_mobs_and_objs_in_view_fast()")
+	var/list/hear = dview(range,T,INVISIBILITY_MAXIMUM, do_debug)
+	if(do_debug)	to_debug_listeners("	hear.len:[hear.len]")
 	var/list/hearturfs = list()
 
 	for(var/atom/movable/AM in hear)
+		if(do_debug)	to_debug_listeners("AM.type:[AM.type]")
 		if(ismob(AM))
 			mobs += AM
 			hearturfs += get_turf(AM)

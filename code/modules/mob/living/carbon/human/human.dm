@@ -96,6 +96,13 @@
 				for(var/helm in mon.valid_helmets)
 					if(istype(head,helm)) //No correct helm? No shield indicator.
 						stat("Shield Level:","[(shield_datum.shieldstrength/shield_datum.totalshields)*100]%")
+		var/obj/item/weapon/gun/gun_l = l_hand
+		var/obj/item/weapon/gun/gun_r = r_hand
+		if(istype(gun_l) && gun_l.overheat_capacity > 0)
+			stat("[gun_l] Heat: [round(100 * gun_l.heat_current / gun_l.overheat_capacity)]%")
+
+		if(istype(gun_r) && gun_r.overheat_capacity > 0)
+			stat("[gun_r] Heat: [round(100 * gun_r.heat_current / gun_r.overheat_capacity)]%")
 
 /mob/living/carbon/human/ex_act(severity)
 	if(!blinded)
@@ -162,6 +169,8 @@
 		else
 			loss_val = 0.05
 		temp.take_damage(b_loss * loss_val, f_loss * loss_val, used_weapon = weapon_message)
+		degrade_affected_armor(b_loss*loss_val,BRUTE,temp)
+		degrade_affected_armor(f_loss*loss_val,BURN,temp)
 
 /mob/living/carbon/human/proc/implant_loyalty(mob/living/carbon/human/M, override = FALSE) // Won't override by default.
 	if(!config.use_loyalty_implants && !override) return // Nuh-uh.

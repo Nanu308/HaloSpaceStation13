@@ -20,10 +20,10 @@
 		handle_embedded_and_stomach_objects() //Moving with objects stuck in you can cause bad times.
 
 	var/health_deficiency = (maxHealth - health)
-	if(health_deficiency >= 40) tally += (health_deficiency / 25)
+	if(health_deficiency >= 40) tally += (health_deficiency / 35)
 
 	if(can_feel_pain())
-		if(getHalLoss() >= 20) tally += (getHalLoss() / 20) //halloss shouldn't slow you down if you can't even feel it
+		if(getHalLoss() >= 20) tally += (getHalLoss() / 30) //halloss shouldn't slow you down if you can't even feel it
 
 	if(istype(buckled, /obj/structure/bed/chair/wheelchair))
 		for(var/organ_name in list(BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM))
@@ -125,3 +125,9 @@
 	if(shoes && (shoes.item_flags & NOSLIP) && istype(shoes, /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
 	return 0
+
+/mob/living/carbon/human/Move(var/newloc,newdir)
+	var/olddir = dir
+	. = ..()
+	if(olddir != dir)
+		reapply_offsets()

@@ -4,10 +4,11 @@
 
 /obj/item/weapon/reagent_containers/hypospray
 	name = "hypospray"
-	desc = "The DeForest Medical Corporation hypospray is a sterile, air-needle autoinjector for rapid administration of drugs to patients."
+	desc = "The Medican hypospray is a sterile, air-needle autoinjector for rapid administration of drugs to patients."
 	icon = 'icons/obj/syringe.dmi'
 	item_state = "hypo"
 	icon_state = "hypo"
+	w_class = ITEM_SIZE_NORMAL
 	amount_per_transfer_from_this = 5
 	unacidable = 1
 	volume = 30
@@ -30,11 +31,12 @@
 	return 1
 
 /obj/item/weapon/reagent_containers/hypospray/proc/has_been_refilled()
-	if(starts_with.len == 0)
-		return 0
-	for(var/datum/chem in reagents)
+	for(var/datum/reagent/chem in reagents.reagent_list)
 		if(!(chem.type in starts_with))
 			return 1
+		else
+			if(chem.volume > chem.overdose)
+				return 1
 	return 0
 
 /obj/item/weapon/reagent_containers/hypospray/attack(mob/living/M as mob, mob/user as mob)
@@ -56,7 +58,7 @@
 
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	user.do_attack_animation(M)
-	if(istype(H) && has_been_refilled())
+	if(istype(H) && user.faction != M.faction && has_been_refilled())
 		if(M.run_armor_check(H.get_organ(user.zone_sel.selecting), "melee") >= 100)
 			user.visible_message("<span class = 'warning'>The modified [src] bounces off of [M]'s armor!</span>")
 			return
@@ -75,6 +77,7 @@
 /obj/item/weapon/reagent_containers/hypospray/autoinjector
 	name = "autoinjector"
 	desc = "A rapid and safe way to administer small amounts of drugs by untrained or trained personnel."
+	w_class = ITEM_SIZE_SMALL
 	icon_state = "autoinjector"
 	item_state = "autoinjector"
 	amount_per_transfer_from_this = 5

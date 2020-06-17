@@ -25,7 +25,7 @@
 		"vertical grip" = "vertical-grip",
 		"underslung shotgun" = "Underbarrel-Shotgun",
 		"MA5 basic upper" = "MA5-Top-Basic",
-		"underslung grenade launcher" = "underslung grenade launcher",
+		"M301 Grenade Launcher" = "MA5-NadeLauncher",
 		"flashlight attachment" = "Underbarrel-Flashlight",
 		"MA5 railed upper" = "MA5-Top-Rails")
 
@@ -40,24 +40,24 @@
 	"vertical grip" = list(-4,2),
 	"underslung shotgun" = list(0,0),
 	"MA5 basic upper" = list(0,0),
-	"underslung grenade launcher" = list(0,0),
+	"M301 Grenade Launcher" = list(0,0),
 	"flashlight attachment" = list(0,0),
 	"MA5 railed upper" = list(0,0)
 	)
 
 	attribute_modifications = list(\
-		"red dot sight" = list(0,0.5,0,005),
+		"red dot sight" = list(0,0.5,0.005),
 		"acog sight" = list(0,0.5,0.005),
-		"suppressor" = list(0.5,0,0.01),
+		"suppressor" = list(0.1,0,0.01),
 		"MA5 stock cheekrest" = list(0,0,0),
 		"MA5 basic stock butt" = list(0,0,0),
 		"MA5 extended stock butt" = list(-0.25,0,0),
-		"vertical grip" = list(-0.2,0.5,0),
-		"underslung shotgun" = list(0.5,0,0,0.02),
+		"vertical grip" = list(-0.1,0.5,0),
+		"underslung shotgun" = list(0.5,0,0.02),
 		"MA5 basic upper" = list(0,0,0),
-		"underslung grenade launcher" = list(0,0,0,0.03),
+		"underslung grenade launcher" = list(0.5,0,0.03),
 		"flashlight attachment" = list(0,0,0.01),
-		"MA5 railed upper" = list(0,0,0,005)
+		"MA5 railed upper" = list(0,0,0.005)
 		)
 
 /datum/attachment_profile/BR55
@@ -89,13 +89,13 @@
 	"flashlight attachment" = list(4,-2)
 	)
 	attribute_modifications = list(\
-		"suppressor" = list(0.2,0.5,0),
+		"suppressor" = list(0.1,0.5,0),
 		"BR55 barrel attachment" = list(0,0,0),
 		"BR55 scope" = list(0,0,0),
 		"BR55 cheekrest" = list(0,0,0),
 		"SOE underslung shotgun" = list(0.5,0,0.01),
 		"BR55 hand guard" = list(0,0,0),
-		"vertical grip" = list(-0.2,0.5,0),
+		"vertical grip" = list(-0.1,0.5,0),
 		"BR55 carry handle" = list(0,0,0),
 		"red dot sight" = list(0,0.5,0.01),
 		"acog sight" = list(0,0.5,0.01),
@@ -118,7 +118,7 @@
 	"M395 scope" = list(0,0)
 	)
 	attribute_modifications = list(\
-		"suppressor" = list(-0.5,0.5,0),
+		"suppressor" = list(0.1,0.5,0),
 		"M395 barrel attachment" = list(0,0,0),
 		"red dot sight" = list(0,0.5,0.1),
 		"acog sight" = list(0,0.5,0.1),
@@ -141,7 +141,7 @@
 	"M395 scope" = list(0,0)
 	)
 	attribute_modifications = list(\
-		"suppressor" = list(-0.5,0.5,0),
+		"suppressor" = list(0.1,0.5,0),
 		"M395 barrel attachment" = list(0,0,0),
 		"red dot sight" = list(0,0.5,0.01),
 		"acog sight" = list(0,0.5,0.01),
@@ -156,21 +156,24 @@
 		"vertical grip" = "vertical-grip",
 		"red dot sight" = "red-dot",
 		"acog sight" = "acog-scope",
-		"SOE underslung shotgun" = "Underbarrel-Shotgun-SOE")
+		"SOE underslung shotgun" = "Underbarrel-Shotgun-SOE",
+		"M301 Grenade Launcher" = "MA5-NadeLauncher",)
 	weapon_pixel_offsets = list(\
 	"suppressor" = list(4,0),
 	"SOE underslung shotgun" = list(0,0),
 	"vertical grip" = list(0,-1),
 	"red dot sight" = list(1,6),
 	"acog sight" = list(-1,5),
-	"flashlight attachment" = list(3,-3)
+	"flashlight attachment" = list(3,-3),
+	"M301 Grenade Launcher" = list(2,2)
 	)
 	attribute_modifications = list(\
 		"SOE underslung shotgun" = list(0.5,0,0),
-		"vertical grip" = list(-0.2,0.5,0),
+		"vertical grip" = list(-0.1,0.5,0),
 		"red dot sight" = list(0,0.5,0.01),
 		"acog sight" = list(0,0.5,0.1),
 		"flashlight attachment" = list(0,0,0.01),
-		"suppressor" = list(-0.5,0.5,0)
+		"suppressor" = list(0.1,0.5,0),
+		"M301 Grenade Launcher" = list(0.5,0,0.03)
 		)
        //dispersion,accuracy,slowdown//

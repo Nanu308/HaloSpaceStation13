@@ -85,7 +85,7 @@
 			faction_name = their_faction.name
 		if(isnull(my_faction) || isnull(faction_name))
 			continue
-		if(faction_name in my_faction.enemy_factions)
+		if(faction_name in my_faction.enemy_faction_names)
 			targets += ship
 
 	if(targets.len > 0)
@@ -129,28 +129,31 @@
 	. = ..()
 
 /obj/item/projectile/overmap/mac/npc
-	damage = 250 //1/4 the damage of the bertels' MAC
+	damage = 1000
 
 /obj/item/projectile/overmap/beam/npc
-	damage = 500
+	damage = 1000
 
 //UNSC//
 /obj/effect/overmap/ship/npc_ship/combat/unsc
-	icons_pickfrom_list = list('code/modules/halo/icons/overmap/prowler.dmi','code/modules/halo/icons/overmap/corvette.dmi')
+	icons_pickfrom_list = list('code/modules/halo/icons/overmap/prowler.dmi')
 	faction = "UNSC"
 	ship_datums = list(/datum/npc_ship/unsc_patrol)
 	available_ship_requests = newlist(/datum/npc_ship_request/halt/unsc,/datum/npc_ship_request/fire_on_target/unsc,/datum/npc_ship_request/control_fleet/unsc,/datum/npc_ship_request/add_to_fleet/unsc,/datum/npc_ship_request/give_control/unsc)
-	radio_channel = "SHIPCOM"
+	radio_channel = RADIO_FLEET
 
 /obj/effect/overmap/ship/npc_ship/combat/unsc/generate_ship_name()
 	. = ..()
 	name = "UNSC [name]"
 
 /obj/effect/overmap/ship/npc_ship/combat/unsc/medium_armed
+	hull = 2000
+	icons_pickfrom_list = list('code/modules/halo/icons/overmap/corvette.dmi')
 	projectiles_to_fire = list(/obj/item/projectile/overmap/deck_gun_proj = 0.1 SECONDS,/obj/item/projectile/overmap/missile = 2.5 SECONDS)
 
 /obj/effect/overmap/ship/npc_ship/combat/unsc/heavily_armed
-	icons_pickfrom_list = list('code/modules/halo/icons/overmap/corvette.dmi','code/modules/halo/icons/overmap/Cruiser.dmi')
+	hull = 2500
+	icons_pickfrom_list = list('code/modules/halo/icons/overmap/Cruiser.dmi')
 	projectiles_to_fire = list(/obj/item/projectile/overmap/deck_gun_proj = 0.1 SECONDS,/obj/item/projectile/overmap/missile = 2 SECONDS, /obj/item/projectile/overmap/mac/npc = 15 SECONDS)
 
 //INNIE//
@@ -159,10 +162,7 @@
 	faction = "Insurrection"
 	ship_datums = list(/datum/npc_ship/unsc_patrol)
 	available_ship_requests = newlist(/datum/npc_ship_request/halt_fake,/datum/npc_ship_request/halt/innie,/datum/npc_ship_request/fire_on_target/innie,/datum/npc_ship_request/control_fleet/innie,/datum/npc_ship_request/add_to_fleet/innie,/datum/npc_ship_request/give_control/innie)
-
-/obj/effect/overmap/ship/npc_ship/combat/innie/New()
-	. = ..()
-	radio_channel = halo_frequencies.innie_channel_name
+	radio_channel = RADIO_INNIE
 
 /obj/effect/overmap/ship/npc_ship/combat/innie/generate_ship_name()
 	. = ..()
@@ -174,10 +174,12 @@
 		. = ..()
 
 /obj/effect/overmap/ship/npc_ship/combat/innie/medium_armed
+	hull = 2000
 	projectiles_to_fire = list(/obj/item/projectile/overmap/deck_gun_proj = 0.1 SECONDS,/obj/item/projectile/overmap/missile = 1 SECONDS)
 
 /obj/effect/overmap/ship/npc_ship/combat/innie/heavily_armed
-	projectiles_to_fire = list(/obj/item/projectile/overmap/deck_gun_proj = 0.1 SECONDS,/obj/item/projectile/overmap/missile = 0.5 SECONDS, /obj/item/projectile/overmap/mac/npc = 20 SECONDS)
+	hull = 2500
+	projectiles_to_fire = list(/obj/item/projectile/overmap/deck_gun_proj = 0.2 SECONDS,/obj/item/projectile/overmap/missile = 0.5 SECONDS, /obj/item/projectile/overmap/mac/npc = 20 SECONDS)
 
 //COVENANT//
 /obj/effect/overmap/ship/npc_ship/combat/covenant
@@ -210,18 +212,22 @@
 	"Vanguard of Charity",
 	"Faithful's Endeavour"
 	)
-	icons_pickfrom_list = list('code/modules/halo/icons/overmap/kig_missionary.dmi','code/modules/halo/icons/overmap/SDV.dmi')
+	icons_pickfrom_list = list('code/modules/halo/icons/overmap/covshuttle2.dmi')
 	faction = "Covenant"
 	radio_language = "Sangheili"
-	radio_channel = "BattleNet"
+	radio_channel = RADIO_COV
 	ship_datums = list(/datum/npc_ship/cov_patrol)
 	available_ship_requests = newlist(/datum/npc_ship_request/halt/cov,/datum/npc_ship_request/fire_on_target/cov,/datum/npc_ship_request/control_fleet/cov,/datum/npc_ship_request/add_to_fleet/cov,/datum/npc_ship_request/give_control/cov)
 
 /obj/effect/overmap/ship/npc_ship/combat/covenant/medium_armed
+	hull = 2000
+	icons_pickfrom_list = list('code/modules/halo/icons/overmap/kig_missionary.dmi')
 	projectiles_to_fire = list(/obj/item/projectile/overmap/pulse_laser = 0.2 SECONDS,/obj/item/projectile/overmap/plas_torp = 0.5 SECONDS)
 
 /obj/effect/overmap/ship/npc_ship/combat/covenant/heavily_armed
-	projectiles_to_fire = list(/obj/item/projectile/overmap/pulse_laser = 0.2 SECONDS,/obj/item/projectile/overmap/plas_torp = 1 SECONDS, /obj/item/projectile/overmap/beam/npc = 25 SECONDS)
+	hull = 2500
+	icons_pickfrom_list = list('code/modules/halo/icons/overmap/SDV.dmi')
+	projectiles_to_fire = list(/obj/item/projectile/overmap/pulse_laser = 0.1 SECONDS,/obj/item/projectile/overmap/plas_torp = 1 SECONDS, /obj/item/projectile/overmap/beam/npc = 20 SECONDS)
 
 /obj/effect/overmap/ship/npc_ship/combat/flood
 	messages_on_hit = list("... / - -","- / .... / -","..",".","....")

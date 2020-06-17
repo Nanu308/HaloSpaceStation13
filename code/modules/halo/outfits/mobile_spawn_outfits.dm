@@ -124,7 +124,6 @@
 	desc = "This mop ssems to have been reinforced and modified to provide it with... A sharp edge?"
 	edge = 1
 	force = 30
-	parry_projectiles = 1
 
 /obj/item/weapon/storage/belt/marine_ammo/mobilespawn_janitor
 	name = "Cleanliness Storage Belt"
@@ -189,7 +188,7 @@
 	r_pocket = /obj/item/weapon/grenade/smokebomb
 
 /decl/hierarchy/outfit/job/mobilespawn_janitor
-	name = "UNSC Janitor"
+	name = "Mobilespawn UNSC Janitor"
 
 	l_ear = /obj/item/device/radio/headset/unsc/marine
 	r_ear = /obj/item/weapon/reagent_containers/syringe/biofoam
